@@ -10,7 +10,7 @@ def p_matrix_comparisons(p_mat=None, model=None, global_var=None, *args, **kwarg
     ## Full time
     if model.ShowComparison == 'FullSnapshot':
         err_mat = numpy.zeros(global_var.time_pts.size())
-        grad_mat = numpy.zeros(pf_mat.shape[1], pf_mat.shape[1] + 1)
+        grad_mat = numpy.zeros(pf_mat.shape[0], pf_mat.shape[0] + 1)
         for vv in range(1, global_var.time_pts.reshape(-1).size()):
             t_gap = (global_var.time_pts(vv) - global_var.time_pts(1))
             coeff_vec = model.Coeff_vecs[vv]
@@ -24,7 +24,7 @@ def p_matrix_comparisons(p_mat=None, model=None, global_var=None, *args, **kwarg
     ## Evaluate first and last point only!
     if model.ShowComparison == 'FirstLastPoint':
         err_mat = numpy.zeros(2, 1)
-        grad_mat = numpy.zeros(pf_mat.shape[1], pf_mat.shape[1] + 1)
+        grad_mat = numpy.zeros(pf_mat.shape[0], pf_mat.shape[0] + 1)
         for vv in model.pts_of_int.reshape(-1):
             t_gap = (global_var.time_pts(vv) - global_var.time_pts(1))
             coeff_vec = model.Coeff_vecs[vv]
@@ -38,13 +38,13 @@ def p_matrix_comparisons(p_mat=None, model=None, global_var=None, *args, **kwarg
 
     ## Time Series
     if model.ShowComparison == 'FullTimeSeries':
-        err_mat = numpy.zeros(numpy.concat([model.TimeSeries.shape[1] - 1, model.n_ts_samples]))
-        grad_mat = numpy.zeros(pf_mat.shape[1], pf_mat.shape[1] + 1)
+        err_mat = numpy.zeros(numpy.concat([model.TimeSeries.shape[0] - 1, model.n_ts_samples]))
+        grad_mat = numpy.zeros(pf_mat.shape[0], pf_mat.shape[0] + 1)
         tot_valid = 0
         for ww in range(1, model.n_ts_samples.reshape(-1).size()):
             err_vec = numpy.zeros(1, global_var.time_pts.size() - 1)
             # ddd/Package_P_Matrix_Comparisons.m:57
-            grad_mat_cache = numpy.zeros(pf_mat.shape[1], pf_mat.shape[1] + 1)
+            grad_mat_cache = numpy.zeros(pf_mat.shape[0], pf_mat.shape[0] + 1)
             for vv in range(2, global_var.time_pts.reshape(-1).size()):
                 t_gap = (global_var.time_pts(vv) - global_var.time_pts(1))
                 coeff_vec = model.TimeSeries[vv, ww]
@@ -64,12 +64,12 @@ def p_matrix_comparisons(p_mat=None, model=None, global_var=None, *args, **kwarg
     ## Comparison
     if model.ShowComparison == 'Composite':
         if model.Lambda != 0:
-            err_mat_ts = numpy.zeros(numpy.concatenate([model.TimeSeries.shape[1] - 1, model.n_ts_samples]))
-            grad_mat_ts = numpy.zeros(pf_mat.shape[1], pf_mat.shape[1] + 1)
+            err_mat_ts = numpy.zeros(numpy.concatenate([model.TimeSeries.shape[0] - 1, model.n_ts_samples]))
+            grad_mat_ts = numpy.zeros(pf_mat.shape[0], pf_mat.shape[0] + 1)
             tot_valid = 0
             for ww in range(1, model.n_ts_samples.reshape(-1).size()):
                 err_vec = numpy.zeros(1, global_var.time_pts.size() - 1)
-                grad_mat_cache = numpy.zeros(pf_mat.shape[1], pf_mat.shape[1] + 1)
+                grad_mat_cache = numpy.zeros(pf_mat.shape[0], pf_mat.shape[0] + 1)
                 for vv in range(2, global_var.time_pts.reshape(-1).size()):
                     t_gap = (global_var.time_pts(vv) - global_var.time_pts(1))
                     coeff_vec = model.TimeSeries[vv, ww]
@@ -88,7 +88,7 @@ def p_matrix_comparisons(p_mat=None, model=None, global_var=None, *args, **kwarg
             grad_mat_ts[:, -1] = 0
         # First last Snapshot
         err_mat_fl = numpy.zeros(2, 1)
-        grad_mat_fl = numpy.zeros(pf_mat.shape[1], pf_mat.shape[1] + 1)
+        grad_mat_fl = numpy.zeros(pf_mat.shape[0], pf_mat.shape[0] + 1)
         for vv in model.pts_of_int.reshape(-1):
             t_gap = (global_var.time_pts(vv) - global_var.time_pts(1))
             coeff_vec = model.Coeff_vecs[vv]

@@ -1,7 +1,7 @@
 import numpy
 import math
 from scipy.io import loadmat
-import sklearn.cluster._kmeans as kmeans
+from sklearn.cluster._kmeans import k_means
 
 if __name__ == "__main_":
     # Load processed data
@@ -12,11 +12,11 @@ if __name__ == "__main_":
     Model.norm_fac = 'Relative'
     # Choose number and locations of basis function
     Model.num_basis = 30
-    __, Model.Basis_Loc = kmeans(Global.all_pts_MixModel, Model.num_basis, 'Replicates', 5, nargout=2)
+    __, Model.Basis_Loc = k_means(Global.all_pts_MixModel, Model.num_basis, 'Replicates', 5, nargout=2)
     Model.subfunc = {}
     # Define form of basis functions used.
-    Model.subfunc.An = lambda n=None, eps=None: 2 * pi ** (n / 2) / gamma(n / 2)
-    Model.subfunc.Vn = lambda n=None, eps=None: (eps ** n) * (pi ** (n / 2)) / gamma((n / 2) + 1)
+    Model.subfunc.An = lambda n=None, eps=None: 2 * math.pi ** (n / 2) / gamma(n / 2)
+    Model.subfunc.Vn = lambda n=None, eps=None: (eps ** n) * (math.pi ** (n / 2)) / gamma((n / 2) + 1)
     Model.subfunc.Intn = lambda n=None, eps=None: eps ** n / (n * (n + 1))
     Model.basis_nd = lambda x=None, n=None, eps=None: max(0, 1 - (vecnorm(x.T, 2) / eps)) / (
         (Model.subfunc.An(n, eps) * Model.subfunc.Intn(n, eps)))
@@ -46,9 +46,9 @@ if __name__ == "__main_":
     Model.InvMassMat = ((Model.InvMassMat + Model.InvMassMat.T) / 2)
     # Find coefficient vectors for each time pt.
     Model.Coeff_vecs = (cell(numel(Global.time_pts), 1))
-    for vv in arange(1, numel(Global.time_pts)).reshape(-1):
+    for vv in range(1, numel(Global.time_pts)).reshape(-1):
         Model.Coeff_vecs[vv] = numpy.zeros(Model.num_basis, 1)
-        for ii in arange(1, Model.num_basis).reshape(-1):
+        for ii in range(1, Model.num_basis).reshape(-1):
             tmp = Model.basis_nd(Global.sample_pts[vv] - Model.Basis_Loc(ii, :), Global.Data_Dim,
                                  Model.Basis_eps(ii))
             Model.Coeff_vecs[vv][ii] = sum(tmp)
@@ -56,11 +56,11 @@ if __name__ == "__main_":
 
     #
     Model.TimeSeries = (cell(numel(Global.time_pts), Global.Num_pts_each_time(1)))
-    for ww in arange(1, Global.Num_pts_each_time(1)).reshape(-1):
+    for ww in range(1, Global.Num_pts_each_time(1)).reshape(-1):
         print(ww)
-        for vv in arange(1, numel(Global.time_pts)).reshape(-1):
+        for vv in range(1, numel(Global.time_pts)).reshape(-1):
             Model.TimeSeries[vv, ww] = numpy.zeros(Model.num_basis, 1)
-            for ii in arange(1, Model.num_basis).reshape(-1):
+            for ii in range(1, Model.num_basis).reshape(-1):
                 tmp = Model.basis_nd(Global.sample_pts[vv](ww, :) - Model.Basis_Loc(ii, :),
                                      Global.Data_Dim, Model.Basis_eps(ii))
                 Model.TimeSeries[vv, ww][ii] = tmp
@@ -69,7 +69,7 @@ if __name__ == "__main_":
     # Plot graphs of a few time points.
     G_tmp = graph(Model.MassMat)
     # ddd/Package_RunMe_Comparison.m:82
-    G_tmp = rmedge(G_tmp, arange(1, numnodes(G_tmp)), arange(1, numnodes(G_tmp)))
+    G_tmp = rmedge(G_tmp, range(1, numnodes(G_tmp)), range(1, numnodes(G_tmp)))
     # ddd/Package_RunMe_Comparison.m:83
     for vv in numpy.concatenate([1, 9, 11]).reshape(-1):
         figure(vv)
@@ -80,8 +80,8 @@ if __name__ == "__main_":
 
     # Plot graphs of a few time points.
     G_tmp = graph(Model.MassMat)
-    G_tmp = rmedge(G_tmp, arange(1, numnodes(G_tmp)), arange(1, numnodes(G_tmp)))
-    for vv in arange(1, 11).reshape(-1):
+    G_tmp = rmedge(G_tmp, range(1, numnodes(G_tmp)), range(1, numnodes(G_tmp)))
+    for vv in range(1, 11).reshape(-1):
         figure(vv)
         plot(G_tmp, 'XData', Model.Basis_Loc(:, 1), 'YData', Model.Basis_Loc(:, 2))
         hold('on')
@@ -99,10 +99,10 @@ if __name__ == "__main_":
     Indc_sum = sum(Model.Indc)
     Indc_zero = sparse(Model.MassMat == 0)
     Indc_vec = find(Model.MassMat != 0)
-    Indc_diag = find(ismember(Indc_vec.T, arange(1, Model.num_basis ** 2, (Model.num_basis + 1))))
+    Indc_diag = find(ismember(Indc_vec.T, range(1, Model.num_basis ** 2, (Model.num_basis + 1))))
     # Define initial guess at P matrix
     init_P = double(Model.Indc)
-    for vv in arange(1, Model.num_basis).reshape(-1):
+    for vv in range(1, Model.num_basis).reshape(-1):
         init_P[vv, vv] = 0
         init_P[vv, vv] = - sum(init_P(:, vv))
 
@@ -116,17 +116,17 @@ if __name__ == "__main_":
     print(strcat('Effective number of parameters:', num2str(eff_var)))
     print(strcat('Eff. basis functions for full DDD:', num2str(sqrt(eff_var))))
     # Append initial condition onto end of vector.
-    init_Q_vec[arange(-1 + 1, -1 + Model.num_basis)] = Model.Coeff_vecs[1]
+    init_Q_vec[range(-1 + 1, -1 + Model.num_basis)] = Model.Coeff_vecs[1]
     # Creating constraints matrix for Aeq * init_Q_vec = beq
     Q_Aeq = sparse(Model.num_basis + 1, Model.num_basis + eff_var)
     run_tot_tmp = 1
-    for kk in arange(1, Model.num_basis).reshape(-1):
-        ind_tmp = arange(run_tot_tmp, run_tot_tmp + Indc_sum(kk) - 1)
+    for kk in range(1, Model.num_basis).reshape(-1):
+        ind_tmp = range(run_tot_tmp, run_tot_tmp + Indc_sum(kk) - 1)
         Q_Aeq[kk, ind_tmp] = Model.InvSums(Model.Indc(kk, :))
         run_tot_tmp = run_tot_tmp + Indc_sum(kk)
 
     clear('kk', 'ind_tmp', 'run_tot_tmp')
-    Q_Aeq[Model.num_basis + 1, arange((-1 - Model.num_basis + 1), -1)] = 1
+    Q_Aeq[Model.num_basis + 1, range((-1 - Model.num_basis + 1), -1)] = 1
     Q_beq = sparse(Model.num_basis + 1, 1)
     Q_beq[-1] = 1
     imagesc(numpy.concatenate(
@@ -134,14 +134,14 @@ if __name__ == "__main_":
     # Create positivity constraint Alt * init_Q_vec <= blt
     Q_Alt = sparse(Model.num_basis + eff_var, Model.num_basis + eff_var)
     run_tot_tmp = 1
-    for kk in arange(1, Model.num_basis).reshape(-1):
+    for kk in range(1, Model.num_basis).reshape(-1):
         xx = find(Model.Indc(kk, :))
         yy = Model.InvMassMat(xx, xx)
-        ind_tmp = arange(run_tot_tmp, run_tot_tmp + Indc_sum(kk) - 1)
+        ind_tmp = range(run_tot_tmp, run_tot_tmp + Indc_sum(kk) - 1)
         Q_Alt[ind_tmp, ind_tmp] = - yy
         run_tot_tmp = run_tot_tmp + Indc_sum(kk)
 
-    ind_tmp = arange(run_tot_tmp, run_tot_tmp + Model.num_basis - 1)
+    ind_tmp = range(run_tot_tmp, run_tot_tmp + Model.num_basis - 1)
     Q_Alt[ind_tmp, ind_tmp] = - eye(Model.num_basis)
     for kk in Indc_diag.reshape(-1):
         Q_Alt[kk, :] = - Q_Alt(kk, :)
@@ -157,7 +157,7 @@ if __name__ == "__main_":
     opts.Algorithm = ('sqp')
     opts.MaxIterations = (300)
     test_init_Q_vec = (init_Q_vec)
-    test_init_Q_vec[arange(1, eff_var)] = 0
+    test_init_Q_vec[range(1, eff_var)] = 0
     Model.ShowComparison = ('FullSnapshot')
     Model.Guess_Q_FS, __, tmp_exitflag, __, tmp_output = fmincon(
         lambda x=None: Package_Q_Matrix_Comparisons(x, Model, Global), test_init_Q_vec, Q_Alt, Q_blt, Q_Aeq, Q_beq, [],
@@ -222,7 +222,7 @@ if __name__ == "__main_":
     # ddd/Package_RunMe_Comparison.m:211
     Model.ShowComparison = ('FullSnapshot')
     # ddd/Package_RunMe_Comparison.m:212
-    Model.Guess_Q_TS[arange(-1 - Model.num_basis + 1, -1)] = Model.Coeff_vecs[1]
+    Model.Guess_Q_TS[range(-1 - Model.num_basis + 1, -1)] = Model.Coeff_vecs[1]
     # ddd/Package_RunMe_Comparison.m:213
     Outputs.Q.mean_err_TS, Grad_calc, Outputs.Q.err_mat_TS = Package_Q_Matrix_Comparisons(Model.Guess_Q_TS, Model,
                                                                                           Global, nargout=3)
@@ -482,8 +482,8 @@ if __name__ == "__main_":
 
     ##
     print('All Time Series')
-    print(mean(sqrt(Outputs.Q.err_mat_TS(arange(2, -1)))))
-    print(mean(sqrt(Outputs.P.err_mat_TS(arange(2, -1)))))
+    print(mean(sqrt(Outputs.Q.err_mat_TS(range(2, -1)))))
+    print(mean(sqrt(Outputs.P.err_mat_TS(range(2, -1)))))
     ##
     print('All Snapshots')
     print(mean(sqrt(Outputs.Q.err_mat_FS)))

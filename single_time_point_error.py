@@ -14,7 +14,7 @@ def single_time_point_error(pf_mat=None, coeff_vec=None, start_vec=None, t_gap=N
     error = ((result_vec.T * model.MassMat) * result_vec) / normalisation_fac
     if math.isnan(error):
         error = math.nan
-        grad_mat = numpy.empty(pf_mat.shape[1], pf_mat.shape[1] + 1)
+        grad_mat = numpy.empty(pf_mat.shape[0], pf_mat.shape[0] + 1)
         grad_mat[:] = numpy.NaN
     else:
         tmp_middle_mat = ((model.MassMat * result_vec) * start_vec.T)

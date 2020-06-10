@@ -6,7 +6,7 @@ def multiply(x, y):
     return x * y
 
 
-def Package_MC_Integration(ii=None, jj=None, Model=None, Global=None, X0=None, *args, **kwargs):
+def mc_integration(ii=None, jj=None, Model=None, Global=None, X0=None, *args, **kwargs):
     max_rad = max(Model.Basis_eps(ii), Model.Basis_eps(jj))
     min_rad = min(Model.Basis_eps(ii), Model.Basis_eps(jj))
     offset = Model.Basis_Loc[jj] - Model.Basis_Loc[ii]
