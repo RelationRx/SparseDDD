@@ -1,14 +1,7 @@
-# Generated with SMOP  0.41-beta
-from libsmop import *
-# ddd/tightfig.m
-
-    
-@function
 def tightfig(hfig=None,*args,**kwargs):
-    varargin = tightfig.varargin
     nargin = tightfig.nargin
 
-    # tightfig: Alters a figure so that it has the minimum size necessary to
+# tightfig: Alters a figure so that it has the minimum size necessary to
 # enclose all axes in the figure without excess space around them.
 # 
 # Note that tightfig will expand the figure to completely encompass all
@@ -19,7 +12,7 @@ def tightfig(hfig=None,*args,**kwargs):
 # instead.
     
     if nargin == 0:
-        hfig=copy(gcf)
+        hfig=gcf
 # ddd/tightfig.m:13
     
     # There can be an issue with tightfig when the user has been modifying

@@ -1,28 +1,30 @@
-import numpy
 import math
-from scipy.io import loadmat
-from sklearn.cluster._kmeans import k_means
-from scipy.special import gamma
-from numpy.linalg import norm
-from scipy.spatial.distance import cdist
-from mc_integration import mc_integration
-from scipy import sparse
-from q_matrix_comparisons import q_matrix_comparisons
-from p_matrix_comparisons import p_matrix_comparisons
-from utils import process_p_matrix, process_q_matrix
-from mc_integration import mc_integration
-from q_vec_to_p_mat import qvec_to_pmat
 
-if __name__ == "__main_":
+import numpy
+from numpy.linalg import norm
+from scipy import sparse
+from scipy.io import loadmat
+from scipy.spatial.distance import cdist
+from scipy.special import gamma
+from sklearn.cluster import k_means
+import ghalton
+from mc_integration import mc_integration
+from p_matrix_comparisons import p_matrix_comparisons
+from q_matrix_comparisons import q_matrix_comparisons
+from q_vec_to_p_mat import qvec_to_pmat
+from utils import process_p_matrix, process_q_matrix
+
+if __name__ == "__main__":
     # Load processed data
     Model = {}
     Global = loadmat('SDE_ProcessedData.mat')
+    Global = Global['Global']
     # Rescale time to (0,1) interval
-    Global.time_pts = (Global.time_pts / (Global.time_pts(-1) - Global.time_pts(1)))
+    Global["time_pts"] = Global["time_pts"] / (Global["time_pts"][-1] - Global["time_pts"][0])
     Model.norm_fac = 'Relative'
     # Choose number and locations of basis function
     Model.num_basis = 30
-    __, Model.Basis_Loc = k_means(Global.all_pts_MixModel, Model.num_basis, 'Replicates', 5, nargout=2)
+    _, Model.Basis_Loc = k_means(Global["all_pts_MixModel"], Model["num_basis"], 'Replicates', 5)
     Model.subfunc = {}
     # Define form of basis functions used.
     Model.subfunc.An = lambda n=None, eps=None: 2 * math.pi ** (n / 2) / gamma(n / 2)
@@ -34,18 +36,19 @@ if __name__ == "__main_":
     Model.subfunc.connections = 2
 
     Model.Basis_eps = (numpy.zeros(Model.num_basis, 1))
-    for ii in range(1, Model.num_basis.reshape(-1).size()):
+    for ii in range(1, Model.num_basis):
         # print(ii)
         d_tmp = cdist(Model.Basis_Loc[ii, :], Model.Basis_Loc)
         d_tmp = numpy.sort(d_tmp[d_tmp > 0])
         Model.Basis_eps[ii] = 1.00001 * d_tmp[Model.subfunc.connections]
 
     # Use Halton Node Placing for Monte Carlo integration
+    sequencer = ghalton.Halton(Global.Data_Dim)
     p = haltonset(Global.Data_Dim)
     X0 = net(p, 10 ** 5)
-    for ii in range(1, Model.num_basis.reshape(-1).size()):
+    for ii in range(1, Model.num_basis):
         # # print(ii)
-        for jj in range(ii, Model.num_basis).reshape(-1):
+        for jj in range(ii, Model.num_basis):
             tmp = mc_integration(ii, jj, Model, Global, X0)
             Model.MassMat[ii, jj] = tmp
             Model.MassMat[jj, ii] = tmp
@@ -56,7 +59,7 @@ if __name__ == "__main_":
     Model.InvMassMat = (Model.InvMassMat + Model.InvMassMat.T) / 2
     # Find coefficient vectors for each time pt.
     Model.Coeff_vecs = cell(Global.time_pts.size(), 1)
-    for vv in range(1, Global.time_pts.reshape(-1).size()):
+    for vv in range(1, Global.time_pts):
         Model.Coeff_vecs[vv] = numpy.zeros(Model.num_basis, 1)
         for ii in range(1, Model.num_basis).reshape(-1):
             tmp = Model.basis_nd(Global.sample_pts[vv] - Model.Basis_Loc[ii, :], Global.Data_Dim,
@@ -66,11 +69,11 @@ if __name__ == "__main_":
 
     #
     Model.TimeSeries = cell(Global.time_pts.size(), Global.Num_pts_each_time[1])
-    for ww in range(1, Global.Num_pts_each_time(1).reshape(-1).size()):
+    for ww in range(1, Global.Num_pts_each_time(1)):
         # print(ww)
-        for vv in range(1, Global.time_pts).reshape(-1).size():
+        for vv in range(1, Global.time_pts):
             Model.TimeSeries[vv, ww] = numpy.zeros(Model.num_basis, 1)
-            for ii in range(1, Model.num_basis).reshape(-1):
+            for ii in range(1, Model.num_basis):
                 tmp = Model.basis_nd(Global.sample_pts[vv][ww, :] - Model.Basis_Loc[ii, :],
                                      Global.Data_Dim, Model.Basis_eps(ii))
                 Model.TimeSeries[vv, ww][ii] = tmp
@@ -259,13 +262,13 @@ if __name__ == "__main_":
     test_init_Q_vec[:, -1] = Model.Coeff_vecs[1]
     ##
     Model.ShowComparison = ('FullSnapshot')
-    Model.Guess_P_FS, __, tmp_exitflag, __, tmp_output = fmincon(
+    Model.Guess_P_FS, _, tmp_exitflag, _, tmp_output = fmincon(
         lambda x=None: p_matrix_comparisons(x, Model, Global), test_init_Q_vec, [], [], P_Aeq, P_beq, P_Lb, [],
         [], opts, nargout=5)
-    Model.Guess_P_FS, __, tmp_exitflag, __, tmp_output = fmincon(
+    Model.Guess_P_FS, _, tmp_exitflag, _, tmp_output = fmincon(
         lambda x=None: p_matrix_comparisons(x, Model, Global), Model.Guess_P_FS, [], [], P_Aeq, P_beq, P_Lb, [],
         [], opts, nargout=5)
-    Model.Guess_P_FS, __, tmp_exitflag, __, tmp_output = fmincon(
+    Model.Guess_P_FS, _, tmp_exitflag, _, tmp_output = fmincon(
         lambda x=None: p_matrix_comparisons(x, Model, Global), Model.Guess_P_FS, [], [], P_Aeq, P_beq, P_Lb, [],
         [], opts, nargout=5)
     Model.ShowComparison = ('FullSnapshot')

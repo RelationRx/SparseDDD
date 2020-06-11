@@ -3,10 +3,10 @@ import math
 from single_time_point_error import single_time_point_error
 
 
-def p_matrix_comparisons(p_mat=None, model=None, global_var=None, *args, **kwargs):
+def p_matrix_comparisons(p_mat=None, model=None, global_var=None):
     start_vec = p_mat[:, -1]
     pf_mat = p_mat[:, 1:- 1]
-
+    error = 0
     ## Full time
     if model.ShowComparison == 'FullSnapshot':
         err_mat = numpy.zeros(global_var.time_pts.size())
@@ -14,8 +14,7 @@ def p_matrix_comparisons(p_mat=None, model=None, global_var=None, *args, **kwarg
         for vv in range(1, global_var.time_pts.reshape(-1).size()):
             t_gap = (global_var.time_pts(vv) - global_var.time_pts(1))
             coeff_vec = model.Coeff_vecs[vv]
-            error_tmp, grad_mat_tmp = single_time_point_error(pf_mat, coeff_vec, start_vec, t_gap, model,
-                                                              nargout=2)
+            error_tmp, grad_mat_tmp = single_time_point_error(pf_mat, coeff_vec, start_vec, t_gap, model)
             err_mat[vv] = error_tmp
             grad_mat = grad_mat + grad_mat_tmp
         error = sum(err_mat) / global_var.num_tpts
@@ -28,8 +27,7 @@ def p_matrix_comparisons(p_mat=None, model=None, global_var=None, *args, **kwarg
         for vv in model.pts_of_int.reshape(-1):
             t_gap = (global_var.time_pts(vv) - global_var.time_pts(1))
             coeff_vec = model.Coeff_vecs[vv]
-            error_tmp, grad_mat_tmp = single_time_point_error(pf_mat, coeff_vec, start_vec, t_gap, model,
-                                                              nargout=2)
+            error_tmp, grad_mat_tmp = single_time_point_error(pf_mat, coeff_vec, start_vec, t_gap, model)
             err_mat[vv] = error_tmp
             grad_mat = grad_mat + grad_mat_tmp
         err_mat = err_mat(model.pts_of_int)
@@ -49,7 +47,7 @@ def p_matrix_comparisons(p_mat=None, model=None, global_var=None, *args, **kwarg
                 t_gap = (global_var.time_pts(vv) - global_var.time_pts(1))
                 coeff_vec = model.TimeSeries[vv, ww]
                 error_tmp, grad_mat_tmp = single_time_point_error(pf_mat, coeff_vec, model.TimeSeries[1, ww],
-                                                                  t_gap, model, nargout=2)
+                                                                  t_gap, model)
                 err_vec[vv - 1] = error_tmp
                 grad_mat_cache = grad_mat_cache + grad_mat_tmp
             if math.isnan(err_vec) == 0:
@@ -74,8 +72,7 @@ def p_matrix_comparisons(p_mat=None, model=None, global_var=None, *args, **kwarg
                     t_gap = (global_var.time_pts(vv) - global_var.time_pts(1))
                     coeff_vec = model.TimeSeries[vv, ww]
                     error_tmp, grad_mat_tmp = single_time_point_error(pf_mat, coeff_vec,
-                                                                                model.TimeSeries[1, ww], t_gap, model,
-                                                                                nargout=2)
+                                                                                model.TimeSeries[1, ww], t_gap, model)
                     err_vec[vv - 1] = error_tmp
                     grad_mat_cache = grad_mat_cache + grad_mat_tmp
                 if math.isnan(err_vec):
@@ -92,11 +89,10 @@ def p_matrix_comparisons(p_mat=None, model=None, global_var=None, *args, **kwarg
         for vv in model.pts_of_int.reshape(-1):
             t_gap = (global_var.time_pts(vv) - global_var.time_pts(1))
             coeff_vec = model.Coeff_vecs[vv]
-            error_tmp, grad_mat_tmp = single_time_point_error(pf_mat, coeff_vec, start_vec, t_gap, model,
-                                                                        nargout=2)
+            error_tmp, grad_mat_tmp = single_time_point_error(pf_mat, coeff_vec, start_vec, t_gap, model)
             err_mat_fl[vv] = error_tmp
             grad_mat_fl = grad_mat_fl + grad_mat_tmp
-        err_mat_fl = err_mat_fl(model.pts_of_int)
+        err_mat_fl = err_mat_fl[model.pts_of_int]
         error_fl = sum(err_mat_fl) / 2
         grad_mat_fl = grad_mat_fl / 2
         if model.Lambda != 0:
