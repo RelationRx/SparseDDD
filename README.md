@@ -19,7 +19,7 @@ Requirements:
 ## Evaluation
 
 
-To evaluate the package, run the Package_RunMe_Comparison file. 
+To evaluate the package, run the Package_RunMe_Comparison file in the matlab folder. 
 
 ## Contributing
 Pull requests are encouraged. 
