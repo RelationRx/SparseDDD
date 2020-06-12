@@ -31,4 +31,4 @@ You can download pretrained models here:
 Pull requests are encouraged. 
 
 ## License
-Creative Commons Attribution-NonCommercial 4.0 International Public License
+MIT License
