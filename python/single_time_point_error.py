@@ -1,7 +1,7 @@
 import math
 import numpy
 import scipy.linalg as linalg
-from calculate_g_matrix import calculate_g_matrix
+from python.calculate_g_matrix import calculate_g_matrix
 
 
 def single_time_point_error(pf_mat=None, coeff_vec=None, start_vec=None, t_gap=None, model=None):

@@ -8,16 +8,16 @@ from scipy.spatial.distance import cdist
 from scipy.special import gamma
 from sklearn.cluster import k_means
 import ghalton
-from mc_integration import mc_integration
-from p_matrix_comparisons import p_matrix_comparisons
-from q_matrix_comparisons import q_matrix_comparisons
-from q_vec_to_p_mat import qvec_to_pmat
-from utils import process_p_matrix, process_q_matrix
+from python.mc_integration import mc_integration
+from python.p_matrix_comparisons import p_matrix_comparisons
+from python.q_matrix_comparisons import q_matrix_comparisons
+from python.q_vec_to_p_mat import qvec_to_pmat
+from python.utils import process_p_matrix, process_q_matrix
 
 if __name__ == "__main__":
     # Load processed data
     Model = {}
-    Global = loadmat('SDE_ProcessedData.mat')
+    Global = loadmat('../SDE_ProcessedData.mat')
     Global = Global['Global']
     # Rescale time to (0,1) interval
     Global["time_pts"] = Global["time_pts"] / (Global["time_pts"][-1] - Global["time_pts"][0])

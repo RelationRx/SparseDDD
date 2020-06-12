@@ -1,6 +1,6 @@
 import numpy
-from p_matrix_comparisons import p_matrix_comparisons
-from q_matrix_comparisons import q_matrix_comparisons
+from python.p_matrix_comparisons import p_matrix_comparisons
+from python.q_matrix_comparisons import q_matrix_comparisons
 
 
 def process_matrix(model, matrix, global_var, func):
