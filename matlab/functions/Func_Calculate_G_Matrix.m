@@ -1,4 +1,4 @@
-function G = Func_CalculateGMatrix(PF_mat,tmp_middle_mat,t_gap,normalisation_fac)
+function G = Func_Calculate_G_Matrix(PF_mat,tmp_middle_mat,t_gap,normalisation_fac)
 PFt = PF_mat';
 tol = 1e-10;
 S_k0 = tmp_middle_mat;

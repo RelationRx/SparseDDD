@@ -1,4 +1,4 @@
-function Value = Package_MC_Integration(ii,jj,Model, Global, X0)
+function Value = Func_Monte_Carlo_Integration(ii,jj,Model, Global, X0)
 
 max_rad = max( Model.Basis_eps(ii), Model.Basis_eps(jj) );
 min_rad = min( Model.Basis_eps(ii), Model.Basis_eps(jj) );

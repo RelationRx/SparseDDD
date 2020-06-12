@@ -1,22 +1,19 @@
-function [error,Grad_mat,err_mat] = Package_Q_Matrix_Comparisons(Q_Mat,Model,Global)
+function [error,Grad_mat,err_mat] = Func_P_Matrix_Comparisons(P_Mat,Model,Global)
 tic
 
-Start_Vec = Q_Mat(end-Model.num_basis+1:end);
-Vec_form = Q_Mat(1:end-Model.num_basis);
-Q_Mat = double( Model.Indc );
-Q_Mat( Model.Indc ) = Vec_form;
-PF_Mat = Model.MassMat\Q_Mat;
+Start_Vec = P_Mat(:,end);
+PF_Mat = P_Mat(:,1:end-1);
 
 
 
 %% Full time
 if Model.ShowComparison == "FullSnapshot"
     err_mat = zeros(numel(Global.time_pts),1);
-    Grad_mat = zeros(size(Q_Mat,1),size(Q_Mat,1)+1);
+    Grad_mat = zeros(size(PF_Mat,1),size(PF_Mat,1)+1);
     for vv = 1:numel(Global.time_pts)
         t_gap = (Global.time_pts(vv)-Global.time_pts(1));
         Coeff_vec = Model.Coeff_vecs{vv};
-        [error_tmp,Grad_mat_tmp] = Package_Func_SingleTimePointError(PF_Mat,Coeff_vec,Start_Vec,t_gap,Model);
+        [error_tmp,Grad_mat_tmp] = Func_SingleTimePointError(PF_Mat,Coeff_vec,Start_Vec,t_gap,Model);
         err_mat(vv) = error_tmp;
         Grad_mat = Grad_mat + Grad_mat_tmp;
     end
@@ -24,8 +21,6 @@ if Model.ShowComparison == "FullSnapshot"
     error = sum(err_mat)/Global.num_tpts;
     Grad_mat = Grad_mat/Global.num_tpts;
     
-    Grad_mat(:,1:Model.num_basis) = Model.MassMat\Grad_mat(:,1:Model.num_basis);
-    Grad_mat = Grad_mat(logical( [Model.Indc,ones(Model.num_basis,1)]) );
     
     
     %disp(error)
@@ -34,19 +29,17 @@ end
 %% Evaluate first and last point only!
 if Model.ShowComparison == "FirstLastPoint"
     err_mat = zeros(2,1);
-    Grad_mat = zeros(size(Q_Mat,1),size(Q_Mat,1)+1);
+    Grad_mat = zeros(size(PF_Mat,1),size(PF_Mat,1)+1);
     for vv = Model.pts_of_int
         t_gap = (Global.time_pts(vv)-Global.time_pts(1));
         Coeff_vec = Model.Coeff_vecs{vv};
-        [error_tmp,Grad_mat_tmp] = Package_Func_SingleTimePointError(PF_Mat,Coeff_vec,Start_Vec,t_gap,Model);
+        [error_tmp,Grad_mat_tmp] = Func_SingleTimePointError(PF_Mat,Coeff_vec,Start_Vec,t_gap,Model);
         err_mat(vv) = error_tmp;
         Grad_mat = Grad_mat + Grad_mat_tmp;
     end
     err_mat = err_mat(Model.pts_of_int);
     error = sum(err_mat)/2;
     Grad_mat = Grad_mat/2;
-    Grad_mat(:,1:Model.num_basis) = Model.MassMat\Grad_mat(:,1:Model.num_basis);
-    Grad_mat = Grad_mat(logical( [Model.Indc,ones(Model.num_basis,1)]) );
     
     
     %disp(error)
@@ -57,16 +50,16 @@ end
 if Model.ShowComparison == "FullTimeSeries"
     
     err_mat = zeros( [size( Model.TimeSeries,1)-1,Model.n_ts_samples] );
-    Grad_mat = zeros(size(Q_Mat,1),size(Q_Mat,1)+1);
+    Grad_mat = zeros(size(PF_Mat,1),size(PF_Mat,1)+1);
     tot_valid = 0;
     for ww = 1:Model.n_ts_samples
     %for ww = randsample(1000,Model.n_ts_samples)'
         err_vec = zeros(1,numel(Global.time_pts)-1);
-        Grad_mat_cache = zeros(size(Q_Mat,1),size(Q_Mat,1)+1);
+        Grad_mat_cache = zeros(size(PF_Mat,1),size(PF_Mat,1)+1);
         for vv = 2:numel(Global.time_pts)
             t_gap = (Global.time_pts(vv)-Global.time_pts(1));
             Coeff_vec = Model.TimeSeries{vv,ww};
-            [error_tmp,Grad_mat_tmp] = Package_Func_SingleTimePointError(PF_Mat,Coeff_vec,Model.TimeSeries{1,ww},t_gap,Model);
+            [error_tmp,Grad_mat_tmp] = Func_SingleTimePointError(PF_Mat,Coeff_vec,Model.TimeSeries{1,ww},t_gap,Model);
             err_vec(vv-1) = error_tmp;
             Grad_mat_cache = Grad_mat_cache + Grad_mat_tmp;
         end
@@ -84,10 +77,10 @@ if Model.ShowComparison == "FullTimeSeries"
     
     %disp(error)
     
-    Grad_mat(:,1:Model.num_basis) = Model.MassMat\Grad_mat(:,1:Model.num_basis);
+    %Grad_mat(:,1:Model.num_basis) = Model.MassMat\Grad_mat(:,1:Model.num_basis);
     Grad_mat(:,end) = 0;
     
-    Grad_mat = Grad_mat(logical( [Model.Indc,ones(Model.num_basis,1)]) );
+    %Grad_mat = Grad_mat(logical( [Model.Indc,ones(Model.num_basis,1)]) );
     
 end
 
@@ -97,15 +90,15 @@ if Model.ShowComparison == "Composite"
     if Model.Lambda ~= 0
         
         err_mat_TS = zeros( [size( Model.TimeSeries,1)-1,Model.n_ts_samples] );
-        Grad_mat_TS = zeros(size(Q_Mat,1),size(Q_Mat,1)+1);
+        Grad_mat_TS = zeros(size(PF_Mat,1),size(PF_Mat,1)+1);
         tot_valid = 0;
         for ww = 1:Model.n_ts_samples
             err_vec = zeros(1,numel(Global.time_pts)-1);
-            Grad_mat_cache = zeros(size(Q_Mat,1),size(Q_Mat,1)+1);
+            Grad_mat_cache = zeros(size(PF_Mat,1),size(PF_Mat,1)+1);
             for vv = 2:numel(Global.time_pts)
                 t_gap = (Global.time_pts(vv)-Global.time_pts(1));
                 Coeff_vec = Model.TimeSeries{vv,ww};
-                [error_tmp,Grad_mat_tmp] = Package_Func_SingleTimePointError(PF_Mat,Coeff_vec,Model.TimeSeries{1,ww},t_gap,Model);
+                [error_tmp,Grad_mat_tmp] = Func_SingleTimePointError(PF_Mat,Coeff_vec,Model.TimeSeries{1,ww},t_gap,Model);
                 err_vec(vv-1) = error_tmp;
                 Grad_mat_cache = Grad_mat_cache + Grad_mat_tmp;
             end
@@ -120,7 +113,6 @@ if Model.ShowComparison == "Composite"
         error_TS = sum(sum(err_mat_TS))/((Global.num_tpts-1)*tot_valid);
         Grad_mat_TS = Grad_mat_TS/((Global.num_tpts-1)*tot_valid);
         
-        Grad_mat_TS(:,1:Model.num_basis) = Model.MassMat\Grad_mat_TS(:,1:Model.num_basis);
         Grad_mat_TS(:,end) = 0;
         
     end
@@ -128,19 +120,17 @@ if Model.ShowComparison == "Composite"
     % First last Snapshot
     
     err_mat_FL = zeros(2,1);
-    Grad_mat_FL = zeros(size(Q_Mat,1),size(Q_Mat,1)+1);
+    Grad_mat_FL = zeros(size(PF_Mat,1),size(PF_Mat,1)+1);
     for vv = Model.pts_of_int
         t_gap = (Global.time_pts(vv)-Global.time_pts(1));
         Coeff_vec = Model.Coeff_vecs{vv};
-        [error_tmp,Grad_mat_tmp] = Package_Func_SingleTimePointError(PF_Mat,Coeff_vec,Start_Vec,t_gap,Model);
+        [error_tmp,Grad_mat_tmp] = Func_SingleTimePointError(PF_Mat,Coeff_vec,Start_Vec,t_gap,Model);
         err_mat_FL(vv) = error_tmp;
         Grad_mat_FL = Grad_mat_FL + Grad_mat_tmp;
     end
     err_mat_FL = err_mat_FL(Model.pts_of_int);
     error_FL = sum(err_mat_FL)/2;
     Grad_mat_FL = Grad_mat_FL/2;
-    Grad_mat_FL(:,1:Model.num_basis) = Model.MassMat\Grad_mat_FL(:,1:Model.num_basis);
-    
     
     % Add up terms
     if Model.Lambda ~= 0
@@ -158,14 +148,13 @@ if Model.ShowComparison == "Composite"
     % Vectorise and remove bad entries
     
     
-    Grad_mat = Grad_mat(logical( [Model.Indc,ones(Model.num_basis,1)]) );
     
     
 end
 
 Grad_mat(abs( Grad_mat) > 10^5 ) = 0;
 
-
+%disp(error)
 
 %% time keeping
 stp_time = toc;

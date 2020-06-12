@@ -1,4 +1,4 @@
-function P_Mat = Package_Func_QVec2PMat(Q_Vec, Model)
+function P_Mat = Func_QVec2PMat(Q_Vec, Model)
 
 Start_Vec = Q_Vec(end-Model.num_basis+1:end);
 Vec_form = Q_Vec(1:end-Model.num_basis);

@@ -1,12 +1,17 @@
+%% This file takes in the preprocessed data from the /data repo and runs Sparse DDD and DDD.
+% This script runs side-by-side with the paper.
+%% Clear variables, specify paths used, and load data.
 clear all
 close all
 clc
+addpath('functions/')
+addpath('aux/')
 % Load processed data
-load('SDE_ProcessedData.mat')
+load('data/preprocess/SDE_ProcessedData.mat')
 % Rescale time to (0,1) interval
 Global.time_pts = Global.time_pts./(Global.time_pts(end) - Global.time_pts(1));
-Model.norm_fac = 'Relative';
 %% Choose number and locations of basis function
+Model.norm_fac = 'Relative';
 Model.num_basis = 30;
 [~,Model.Basis_Loc] = kmeans(Global.all_pts_MixModel,Model.num_basis,'Replicates',5);
 
@@ -33,7 +38,7 @@ X0 = net(p,10^5);
 for ii = 1:Model.num_basis
     disp(ii)
     for jj = ii:Model.num_basis
-        tmp = Package_MC_Integration(ii, jj, Model, Global, X0);
+        tmp = Func_Monte_Carlo_Integration(ii, jj, Model, Global, X0);
         Model.MassMat(ii,jj) = tmp;
         Model.MassMat(jj,ii) = tmp;
     end
@@ -105,7 +110,7 @@ CoeffMat = cell2mat(Model.Coeff_vecs');
 figure()
 imagesc(CoeffMat )
 drawnow
-
+clear CoeffMat
 %%  Define useful quantities for later.
 Model.InvSums = sum(Model.InvMassMat);
 Model.Indc = sparse(Model.MassMat~=0);
@@ -174,18 +179,16 @@ opts.Algorithm = 'sqp';
 %opts.TypicalX = init_K;
 opts.MaxIterations = 300;
 %%
-%[Model.Guess_Q,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_Find_Q_Matrix(x,Model,Global),init_Q_vec,Alt,blt,Aeq,beq,[],[],[],opts);
-%%
 test_init_Q_vec = init_Q_vec;
 test_init_Q_vec(1:eff_var) = 0;
 %%
 Model.ShowComparison = 'FullSnapshot';
-[Model.Guess_Q_FS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_Q_Matrix_Comparisons(x,Model,Global),test_init_Q_vec,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
-[Model.Guess_Q_FS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_Q_Matrix_Comparisons(x,Model,Global),Model.Guess_Q_FS,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
-[Model.Guess_Q_FS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_Q_Matrix_Comparisons(x,Model,Global),Model.Guess_Q_FS,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
+[Model.Guess_Q_FS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_Q_Matrix_Comparisons(x,Model,Global),test_init_Q_vec,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
+[Model.Guess_Q_FS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_Q_Matrix_Comparisons(x,Model,Global),Model.Guess_Q_FS,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
+[Model.Guess_Q_FS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_Q_Matrix_Comparisons(x,Model,Global),Model.Guess_Q_FS,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
 Model.ShowComparison = 'FullSnapshot';
 %Model.Guess_Q_FS(end-Model.num_basis+1:end) = Model.Coeff_vecs{1};
-[Outputs.Q.mean_err_FS,Grad_calc,Outputs.Q.err_mat_FS] = Package_Q_Matrix_Comparisons(Model.Guess_Q_FS,Model,Global);
+[Outputs.Q.mean_err_FS,Grad_calc,Outputs.Q.err_mat_FS] = Func_Q_Matrix_Comparisons(Model.Guess_Q_FS,Model,Global);
 disp('=========================================================')
 disp('Best we can hope for:')
 disp(Outputs.Q.err_mat_FS)
@@ -193,12 +196,12 @@ disp(strcat('mean error:',num2str(mean(Outputs.Q.err_mat_FS))))
 %%
 Model.ShowComparison = 'FirstLastPoint';
 Model.pts_of_int = [1,4];
-[Model.Guess_Q_FL,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_Q_Matrix_Comparisons(x,Model,Global),test_init_Q_vec,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
-[Model.Guess_Q_FL,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_Q_Matrix_Comparisons(x,Model,Global),Model.Guess_Q_FL,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
-[Model.Guess_Q_FL,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_Q_Matrix_Comparisons(x,Model,Global),Model.Guess_Q_FL,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
+[Model.Guess_Q_FL,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_Q_Matrix_Comparisons(x,Model,Global),test_init_Q_vec,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
+[Model.Guess_Q_FL,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_Q_Matrix_Comparisons(x,Model,Global),Model.Guess_Q_FL,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
+[Model.Guess_Q_FL,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_Q_Matrix_Comparisons(x,Model,Global),Model.Guess_Q_FL,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
 Model.ShowComparison = 'FullSnapshot';
 %Model.Guess_Q_FL(end-Model.num_basis+1:end) = Model.Coeff_vecs{1};
-[Outputs.Q.mean_err_FL,Grad_calc,Outputs.Q.err_mat_FL] = Package_Q_Matrix_Comparisons(Model.Guess_Q_FL,Model,Global);
+[Outputs.Q.mean_err_FL,Grad_calc,Outputs.Q.err_mat_FL] = Func_Q_Matrix_Comparisons(Model.Guess_Q_FL,Model,Global);
 disp('=========================================================')
 disp('Worst case scenario:')
 disp(Outputs.Q.err_mat_FL)
@@ -206,12 +209,12 @@ disp(strcat('mean error:',num2str(mean(Outputs.Q.err_mat_FL))))
 %%
 Model.ShowComparison = 'FullTimeSeries';
 Model.n_ts_samples = 100;
-[Model.Guess_Q_TS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_Q_Matrix_Comparisons(x,Model,Global),test_init_Q_vec,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
-[Model.Guess_Q_TS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_Q_Matrix_Comparisons(x,Model,Global),Model.Guess_Q_TS,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
-[Model.Guess_Q_TS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_Q_Matrix_Comparisons(x,Model,Global),Model.Guess_Q_TS,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
+[Model.Guess_Q_TS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_Q_Matrix_Comparisons(x,Model,Global),test_init_Q_vec,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
+[Model.Guess_Q_TS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_Q_Matrix_Comparisons(x,Model,Global),Model.Guess_Q_TS,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
+[Model.Guess_Q_TS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_Q_Matrix_Comparisons(x,Model,Global),Model.Guess_Q_TS,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
 Model.ShowComparison = 'FullSnapshot';
 Model.Guess_Q_TS(end-Model.num_basis+1:end) = Model.Coeff_vecs{1};
-[Outputs.Q.mean_err_TS,Grad_calc,Outputs.Q.err_mat_TS] = Package_Q_Matrix_Comparisons(Model.Guess_Q_TS,Model,Global);
+[Outputs.Q.mean_err_TS,Grad_calc,Outputs.Q.err_mat_TS] = Func_Q_Matrix_Comparisons(Model.Guess_Q_TS,Model,Global);
 disp('=========================================================')
 disp('Full Time Series:')
 disp(Outputs.Q.err_mat_TS)
@@ -220,19 +223,19 @@ disp(strcat('mean error:',num2str(mean(Outputs.Q.err_mat_TS))))
 %%
 Model.ShowComparison = 'Composite';
 Model.Lambda = 0; Model.n_ts_samples = 10; Model.pts_of_int = [1,4];
-[Model.Guess_Q_C,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_Q_Matrix_Comparisons(x,Model,Global),test_init_Q_vec,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
+[Model.Guess_Q_C,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_Q_Matrix_Comparisons(x,Model,Global),test_init_Q_vec,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
 %%
 Model.ShowComparison = 'Composite';
 Model.Lambda = 0.01; Model.n_ts_samples = 10; Model.pts_of_int = [1,4];
-[Model.Guess_Q_C,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_Q_Matrix_Comparisons(x,Model,Global),Model.Guess_Q_C,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
+[Model.Guess_Q_C,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_Q_Matrix_Comparisons(x,Model,Global),Model.Guess_Q_C,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
 %%
 Model.ShowComparison = 'Composite';
 Model.Lambda = 0.01; Model.n_ts_samples = 10; Model.pts_of_int = [1,4];
-[Model.Guess_Q_C,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_Q_Matrix_Comparisons(x,Model,Global),Model.Guess_Q_C,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
+[Model.Guess_Q_C,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_Q_Matrix_Comparisons(x,Model,Global),Model.Guess_Q_C,Q_Alt,Q_blt,Q_Aeq,Q_beq,[],[],[],opts);
 %%
 Model.ShowComparison = 'FullSnapshot';
 %Model.Guess_Q_C(end-Model.num_basis+1:end) = Model.Coeff_vecs{1};
-[Outputs.Q.mean_err_C,Grad_calc,Outputs.Q.err_mat_C] = Package_Q_Matrix_Comparisons(Model.Guess_Q_C,Model,Global);
+[Outputs.Q.mean_err_C,Grad_calc,Outputs.Q.err_mat_C] = Func_Q_Matrix_Comparisons(Model.Guess_Q_C,Model,Global);
 disp('=========================================================')
 disp('Composite:')
 disp(Outputs.Q.err_mat_C)
@@ -252,10 +255,10 @@ legend('Trajectory', 'Full Snapshot', 'Two Snapshot', 'Integrated')
 axis square
  tightfig(); 
 %%
-Model.Guess_P_FS = Package_Func_QVec2PMat(Model.Guess_Q_FS, Model);
-Model.Guess_P_FL = Package_Func_QVec2PMat(Model.Guess_Q_FL, Model);
-Model.Guess_P_TS = Package_Func_QVec2PMat(Model.Guess_Q_TS, Model);
-Model.Guess_P_C = Package_Func_QVec2PMat(Model.Guess_Q_C, Model);
+Model.Guess_P_FS = Func_QVec2PMat(Model.Guess_Q_FS, Model);
+Model.Guess_P_FL = Func_QVec2PMat(Model.Guess_Q_FL, Model);
+Model.Guess_P_TS = Func_QVec2PMat(Model.Guess_Q_TS, Model);
+Model.Guess_P_C = Func_QVec2PMat(Model.Guess_Q_C, Model);
 
 %%
 P_Lb = zeros(Model.num_basis);
@@ -274,12 +277,12 @@ test_init_Q_vec(:,end) = Model.Coeff_vecs{1};
 
 %%
 Model.ShowComparison = 'FullSnapshot';
-[Model.Guess_P_FS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_P_Matrix_Comparisons(x,Model,Global),test_init_Q_vec,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
-[Model.Guess_P_FS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_P_Matrix_Comparisons(x,Model,Global),Model.Guess_P_FS,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
-[Model.Guess_P_FS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_P_Matrix_Comparisons(x,Model,Global),Model.Guess_P_FS,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
+[Model.Guess_P_FS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_P_Matrix_Comparisons(x,Model,Global),test_init_Q_vec,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
+[Model.Guess_P_FS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_P_Matrix_Comparisons(x,Model,Global),Model.Guess_P_FS,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
+[Model.Guess_P_FS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_P_Matrix_Comparisons(x,Model,Global),Model.Guess_P_FS,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
 Model.ShowComparison = 'FullSnapshot';
 %Model.Guess_P_FS(:,end) = Model.Coeff_vecs{1};
-[Outputs.P.mean_err_FS,Grad_calc,Outputs.P.err_mat_FS] = Package_P_Matrix_Comparisons(Model.Guess_P_FS,Model,Global);
+[Outputs.P.mean_err_FS,Grad_calc,Outputs.P.err_mat_FS] = Func_P_Matrix_Comparisons(Model.Guess_P_FS,Model,Global);
 disp('=========================================================')
 disp('Best we can hope for:')
 disp(Outputs.P.err_mat_FS)
@@ -287,12 +290,12 @@ disp(strcat('mean error:',num2str(mean(Outputs.P.err_mat_FS))))
 %%
 Model.ShowComparison = 'FirstLastPoint';
 Model.pts_of_int = [1,4];
-[Model.Guess_P_FL,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_P_Matrix_Comparisons(x,Model,Global),test_init_Q_vec,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
-[Model.Guess_P_FL,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_P_Matrix_Comparisons(x,Model,Global),Model.Guess_P_FL,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
-[Model.Guess_P_FL,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_P_Matrix_Comparisons(x,Model,Global),Model.Guess_P_FL,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
+[Model.Guess_P_FL,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_P_Matrix_Comparisons(x,Model,Global),test_init_Q_vec,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
+[Model.Guess_P_FL,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_P_Matrix_Comparisons(x,Model,Global),Model.Guess_P_FL,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
+[Model.Guess_P_FL,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_P_Matrix_Comparisons(x,Model,Global),Model.Guess_P_FL,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
 Model.ShowComparison = 'FullSnapshot';
 %Model.Guess_P_FL(:,end) = Model.Coeff_vecs{1};
-[Outputs.P.mean_err_FL,Grad_calc,Outputs.P.err_mat_FL] = Package_P_Matrix_Comparisons(Model.Guess_P_FL,Model,Global);
+[Outputs.P.mean_err_FL,Grad_calc,Outputs.P.err_mat_FL] = Func_P_Matrix_Comparisons(Model.Guess_P_FL,Model,Global);
 disp('=========================================================')
 disp('Worst case scenario:')
 disp(Outputs.P.err_mat_FL)
@@ -300,12 +303,12 @@ disp(strcat('mean error:',num2str(mean(Outputs.P.err_mat_FL))))
 %%
 Model.ShowComparison = 'FullTimeSeries';
 Model.n_ts_samples = 100;
-[Model.Guess_P_TS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_P_Matrix_Comparisons(x,Model,Global),test_init_Q_vec,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
-[Model.Guess_P_TS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_P_Matrix_Comparisons(x,Model,Global),Model.Guess_P_TS,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
-[Model.Guess_P_TS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_P_Matrix_Comparisons(x,Model,Global),Model.Guess_P_TS,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
+[Model.Guess_P_TS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_P_Matrix_Comparisons(x,Model,Global),test_init_Q_vec,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
+[Model.Guess_P_TS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_P_Matrix_Comparisons(x,Model,Global),Model.Guess_P_TS,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
+[Model.Guess_P_TS,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_P_Matrix_Comparisons(x,Model,Global),Model.Guess_P_TS,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
 Model.ShowComparison = 'FullSnapshot';
 Model.Guess_P_TS(:,end) = Model.Coeff_vecs{1};
-[Outputs.P.mean_err_TS,Grad_calc,Outputs.P.err_mat_TS] = Package_P_Matrix_Comparisons(Model.Guess_P_TS,Model,Global);
+[Outputs.P.mean_err_TS,Grad_calc,Outputs.P.err_mat_TS] = Func_P_Matrix_Comparisons(Model.Guess_P_TS,Model,Global);
 disp('=========================================================')
 disp('Full Time Series:')
 disp(Outputs.P.err_mat_TS)
@@ -314,19 +317,19 @@ disp(strcat('mean error:',num2str(mean(Outputs.P.err_mat_TS))))
 %%
 Model.ShowComparison = 'Composite';
 Model.Lambda = 0; Model.n_ts_samples = 10; Model.pts_of_int = [1,4];
-[Model.Guess_P_C,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_P_Matrix_Comparisons(x,Model,Global),test_init_Q_vec,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
+[Model.Guess_P_C,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_P_Matrix_Comparisons(x,Model,Global),test_init_Q_vec,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
 %%
 Model.ShowComparison = 'Composite';
 Model.Lambda = 0.01; Model.n_ts_samples = 10; Model.pts_of_int = [1,4];
-[Model.Guess_P_C,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_P_Matrix_Comparisons(x,Model,Global),Model.Guess_P_C,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
+[Model.Guess_P_C,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_P_Matrix_Comparisons(x,Model,Global),Model.Guess_P_C,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
 %%
 Model.ShowComparison = 'Composite';
 Model.Lambda = 0.01; Model.n_ts_samples = 10; Model.pts_of_int = [1,4];
-[Model.Guess_P_C,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Package_P_Matrix_Comparisons(x,Model,Global),Model.Guess_P_C,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
+[Model.Guess_P_C,~,tmp_exitflag,~,tmp_output] = fmincon(@(x)Func_P_Matrix_Comparisons(x,Model,Global),Model.Guess_P_C,[],[],P_Aeq,P_beq,P_Lb,[],[],opts);
 %%
 Model.ShowComparison = 'FullSnapshot';
 %Model.Guess_P_C(:,end) = Model.Coeff_vecs{1};
-[Outputs.P.mean_err_C,Grad_calc,Outputs.P.err_mat_C] = Package_P_Matrix_Comparisons(Model.Guess_P_C,Model,Global);
+[Outputs.P.mean_err_C,Grad_calc,Outputs.P.err_mat_C] = Func_P_Matrix_Comparisons(Model.Guess_P_C,Model,Global);
 disp('=========================================================')
 disp('Composite:')
 disp(Outputs.P.err_mat_C)
@@ -380,18 +383,18 @@ test_init_P_mat = Package_Func_QVec2PMat(test_init_Q_vec, Model);
 clc
 format long
 Model.ShowComparison = 'FullSnapshot';
-[a,b,c] = Package_Q_Matrix_Comparisons(test_init_Q_vec,Model,Global);
+[a,b,c] = Func_Q_Matrix_Comparisons(test_init_Q_vec,Model,Global);
 test_init_Q_vec(2) = test_init_Q_vec(2) + 1e-4;
-[A,B,C] = Package_Q_Matrix_Comparisons(test_init_Q_vec,Model,Global);
+[A,B,C] = Func_Q_Matrix_Comparisons(test_init_Q_vec,Model,Global);
 disp(strcat("Derivative checking:",num2str( [ (A - a)/1e-4, b(2), B(2) ] )))
 disp(strcat("Error:",num2str( a )))
 format short
 %
 format long
 Model.ShowComparison = 'FullSnapshot';
-[a,b,~] = Package_P_Matrix_Comparisons(test_init_P_mat,Model,Global);
+[a,b,~] = Func_P_Matrix_Comparisons(test_init_P_mat,Model,Global);
 test_init_P_mat(2) = test_init_P_mat(2) + 1e-4;
-[A,B,~] = Package_P_Matrix_Comparisons(test_init_P_mat,Model,Global);
+[A,B,~] = Func_P_Matrix_Comparisons(test_init_P_mat,Model,Global);
 disp(strcat("Derivative checking:",num2str( [ (A - a)/1e-4, b(2), B(2) ] )))
 disp(strcat("Error:",num2str( a )))
 format short
@@ -400,9 +403,9 @@ clc
 format long
 Model.ShowComparison = 'FirstLastPoint';
 Model.pts_of_int = [1,6];
-[a,b,~] = Package_Q_Matrix_Comparisons(test_init_Q_vec,Model,Global);
+[a,b,~] = Func_Q_Matrix_Comparisons(test_init_Q_vec,Model,Global);
 test_init_Q_vec(2) = test_init_Q_vec(2) + 1e-4;
-[A,B,~] = Package_Q_Matrix_Comparisons(test_init_Q_vec,Model,Global);
+[A,B,~] = Func_Q_Matrix_Comparisons(test_init_Q_vec,Model,Global);
 disp(strcat("Derivative checking:",num2str( [ (A - a)/1e-4, b(2), B(2) ] )))
 disp(strcat("Error:",num2str( a )))
 format short
@@ -410,9 +413,9 @@ format short
 format long
 Model.ShowComparison = 'FirstLastPoint';
 Model.pts_of_int = [1,6];
-[a,b,~] = Package_P_Matrix_Comparisons(test_init_P_mat,Model,Global);
+[a,b,~] = Func_P_Matrix_Comparisons(test_init_P_mat,Model,Global);
 test_init_P_mat(2) = test_init_P_mat(2) + 1e-4;
-[A,B,~] = Package_P_Matrix_Comparisons(test_init_P_mat,Model,Global);
+[A,B,~] = Func_P_Matrix_Comparisons(test_init_P_mat,Model,Global);
 disp(strcat("Derivative checking:",num2str( [ (A - a)/1e-4, b(2), B(2) ] )))
 disp(strcat("Error:",num2str( a )))
 format short
@@ -421,9 +424,9 @@ clc
 format long
 Model.ShowComparison = 'FullTimeSeries';
 Model.n_ts_samples = 100;
-[a,b,~] = Package_Q_Matrix_Comparisons(test_init_Q_vec,Model,Global);
+[a,b,~] = Func_Q_Matrix_Comparisons(test_init_Q_vec,Model,Global);
 test_init_Q_vec(2) = test_init_Q_vec(2) + 1e-4;
-[A,B,~] = Package_Q_Matrix_Comparisons(test_init_Q_vec,Model,Global);
+[A,B,~] = Func_Q_Matrix_Comparisons(test_init_Q_vec,Model,Global);
 disp(strcat("Derivative checking:",num2str( [ (A - a)/1e-4, b(2), B(2) ] )))
 disp(strcat("Error:",num2str( a )))
 format short
@@ -431,9 +434,9 @@ format short
 format long
 Model.ShowComparison = 'FullTimeSeries';
 Model.n_ts_samples = 100;
-[a,b,~] = Package_P_Matrix_Comparisons(test_init_P_mat,Model,Global);
+[a,b,~] = Func_P_Matrix_Comparisons(test_init_P_mat,Model,Global);
 test_init_P_mat(2) = test_init_P_mat(2) + 1e-4;
-[A,B,~] = Package_P_Matrix_Comparisons(test_init_P_mat,Model,Global);
+[A,B,~] = Func_P_Matrix_Comparisons(test_init_P_mat,Model,Global);
 disp(strcat("Derivative checking:",num2str( [ (A - a)/1e-4, b(2), B(2) ] )))
 disp(strcat("Error:",num2str( a )))
 format short
@@ -442,9 +445,9 @@ clc
 format long
 Model.ShowComparison = 'Composite';
 Model.Lambda = 0.25; Model.n_ts_samples = 10; Model.pts_of_int = [1,6];
-[a,b,~] = Package_Q_Matrix_Comparisons(test_init_Q_vec,Model,Global);
+[a,b,~] = Func_Q_Matrix_Comparisons(test_init_Q_vec,Model,Global);
 test_init_Q_vec(2) = test_init_Q_vec(2) + 1e-4;
-[A,B,~] = Package_Q_Matrix_Comparisons(test_init_Q_vec,Model,Global);
+[A,B,~] = Func_Q_Matrix_Comparisons(test_init_Q_vec,Model,Global);
 disp(strcat("Derivative checking:",num2str( [ (A - a)/1e-4, b(2), B(2) ] )))
 disp(strcat("Error:",num2str( a )))
 format short
@@ -452,9 +455,9 @@ format short
 format long
 Model.ShowComparison = 'Composite';
 Model.Lambda = 0.25; Model.n_ts_samples = 10; Model.pts_of_int = [1,6];
-[a,b,~] = Package_P_Matrix_Comparisons(test_init_P_mat,Model,Global);
+[a,b,~] = Func_P_Matrix_Comparisons(test_init_P_mat,Model,Global);
 test_init_P_mat(2) = test_init_P_mat(2) + 1e-4;
-[A,B,~] = Package_P_Matrix_Comparisons(test_init_P_mat,Model,Global);
+[A,B,~] = Func_P_Matrix_Comparisons(test_init_P_mat,Model,Global);
 disp(strcat("Derivative checking:",num2str( [ (A - a)/1e-4, b(2), B(2) ] )))
 disp(strcat("Error:",num2str( a )))
 format short

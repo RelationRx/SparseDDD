@@ -1,4 +1,4 @@
-function [error,Grad_mat] = Package_Func_SingleTimePointError(PF_Mat,Coeff_vec,Start_Vec, t_gap, Model)
+function [error,Grad_mat] = Func_SingleTimePointError(PF_Mat,Coeff_vec,Start_Vec, t_gap, Model)
 if Model.norm_fac == "Relative"
     normalisation_fac = (Coeff_vec'*Model.MassMat*Coeff_vec);
 else
@@ -15,7 +15,7 @@ if isnan(error)
     Grad_mat = nan(size(PF_Mat,1),size(PF_Mat,1) + 1);
 else
     tmp_middle_mat = Model.MassMat*result_vec*Start_Vec';
-    G_tmp = Func_CalculateGMatrix(PF_Mat,tmp_middle_mat,t_gap,normalisation_fac);
+    G_tmp = Func_Calculate_G_Matrix(PF_Mat,tmp_middle_mat,t_gap,normalisation_fac);
     G_tmp_2 = (2*(mat_G')*Model.MassMat*result_vec)/normalisation_fac;
     Grad_mat = [G_tmp,G_tmp_2];
 end
