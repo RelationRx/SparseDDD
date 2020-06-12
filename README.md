@@ -3,7 +3,7 @@
 Implementation of Sparse Dynamic Distribution Decomposition
 =======
 
-This repository is the official implementation of [Sparse Dynamic Distribution Decomposition: Efficient Integration of Trajectory and SnapshotTime Series Data](https://arxiv.org/abs/2006.05138). 
+This repository is the official implementation of Sparse Dynamic Distribution Decomposition: Efficient Integration of Trajectory and SnapshotTime Series Data. 
 
 
 ## Requirements
