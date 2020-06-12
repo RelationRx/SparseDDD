@@ -1,6 +1,7 @@
 # SparseDDD
 
-This repository is the official implementation of Sparse Dynamic Distribution Decomposition: Efficient Integration of Trajectory and SnapshotTime Series Data. 
+This repository is the official implementation of [Sparse Dynamic Distribution Decomposition: Efficient Integration of Trajectory and SnapshotTime Series Data](https://arxiv.org/abs/2006.05138). 
+
 
 ## Requirements
 
@@ -14,11 +15,12 @@ Requirements:
 
 ## Evaluation
 
-To evaluate the package, run the RunMe_Comparison_And_Paper_Figures.m file. 
+
+To evaluate the package, run the Package_RunMe_Comparison file. 
 
 ## Contributing
-Pull requests are encouraged. The repository is available here:
-https://github.com/RelationRx/SparseDDD
+Pull requests are encouraged. 
 
 ## License
-Creative Commons Attribution-NonCommercial 4.0 International Public License
+MIT License
+
